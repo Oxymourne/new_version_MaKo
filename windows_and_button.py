@@ -1,0 +1,104 @@
+from PyQt6.QtCore import Qt
+from labels import *
+from lines_blocks import TextLine
+from styles import button_style, main_window_style, check_box_style
+from text_blocks import MagazinesInputBlock
+
+
+class VersionChoiceWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.setFixedSize(400, 150)
+        self.setStyleSheet("background-color: #F4F7F9;")
+
+        central_widget = QtWidgets.QWidget()
+        self.setCentralWidget(central_widget)
+
+        layout = QtWidgets.QGridLayout(central_widget)
+
+        self.auto_version_window = AutoVersionWindow()
+
+        button_default = Button('Дефолтные коды точек')
+        layout.addWidget(button_default, 1, 0)
+        button_default.clicked.connect(self.show_auto_version_window)
+
+        layout.addWidget(Button('Кастомные коды точек'), 1, 1)
+        layout.addWidget(ChoiceWindowLabel('Выбери версию приложения'),
+                         0, 0, 1, 2,
+                         alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def show_auto_version_window(self):
+        self.close()
+        self.auto_version_window.show()
+
+
+class Button(QtWidgets.QPushButton):
+    def __init__(self, text):
+        super().__init__()
+
+        self.setFixedHeight(40)
+        self.setText(text)
+        self.setStyleSheet(button_style)
+
+
+class AutoVersionWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.setFixedSize(800, 600)
+        self.setWindowTitle('MaKo V2.0')
+        self.setStyleSheet(main_window_style)
+
+        central_widget = QtWidgets.QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QtWidgets.QGridLayout(central_widget)
+
+        layout.addWidget(MenuLabel('Названия точек'), 0, 0)
+        layout.addWidget(MagazinesInputBlock(), 1, 0, 6, 1)
+
+        layout.addWidget(MenuLabel('Api ключ *'),
+                         0, 1,
+                         alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.api_text_line = TextLine()
+        layout.addWidget(self.api_text_line, 0, 2)
+
+        layout.addWidget(MenuLabel('Название бренда *'),
+                         1, 1,
+                         alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.brand_name = TextLine()
+        layout.addWidget(self.brand_name, 1, 2)
+
+        layout.addWidget(MenuLabel('Порт для Waiter'),
+                         2, 1,
+                         alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.waiter_line = TextLine()
+        self.waiter_line.setFixedWidth(100)
+        layout.addWidget(self.waiter_line, 2, 2)
+
+        layout.addWidget(MenuLabel('Начальный код точек *'),
+                         3, 1,
+                         alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.magazines_codes = TextLine()
+        self.magazines_codes.setFixedWidth(50)
+        layout.addWidget(self.magazines_codes, 3, 2)
+
+        layout.addWidget(MenuLabel('Списание по СМС'),
+                         4, 1,
+                         alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.sms_check = SmsCheckBox()
+        layout.addWidget(self.sms_check, 4, 2)
+
+        self.button_4 = Button('Просто кнопка')
+        layout.addWidget(self.button_4)
+        self.button_4.clicked.connect(self.get_input_values)
+
+    def get_input_values(self):
+        a = self.api_text_line.text()
+
+
+class SmsCheckBox(QtWidgets.QCheckBox):
+    def __init__(self):
+        super().__init__()
+
+        self.setStyleSheet(check_box_style)

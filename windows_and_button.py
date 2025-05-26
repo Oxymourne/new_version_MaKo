@@ -2,7 +2,7 @@ from PyQt6.QtCore import Qt
 from labels import *
 from lines_blocks import TextLine
 from styles import button_style, main_window_style, check_box_style
-from text_blocks import MagazinesInputBlock
+from text_blocks import TextBlock
 
 
 class VersionChoiceWindow(QtWidgets.QMainWindow):
@@ -18,19 +18,28 @@ class VersionChoiceWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QGridLayout(central_widget)
 
         self.auto_version_window = AutoVersionWindow()
+        self.custom_version_window = CustomVersionWindow()
 
-        button_default = Button('Дефолтные коды точек')
+        button_default = Button('Генерация кодов')
         layout.addWidget(button_default, 1, 0)
         button_default.clicked.connect(self.show_auto_version_window)
 
-        layout.addWidget(Button('Кастомные коды точек'), 1, 1)
+        button_custom = Button('Ручная настройка кодов')
+        layout.addWidget(button_custom, 1, 1)
+        button_custom.clicked.connect(self.show_custom_version_window)
+
         layout.addWidget(ChoiceWindowLabel('Выбери версию приложения'),
                          0, 0, 1, 2,
                          alignment=Qt.AlignmentFlag.AlignCenter)
 
+
     def show_auto_version_window(self):
         self.close()
         self.auto_version_window.show()
+
+    def show_custom_version_window(self):
+        self.close()
+        self.custom_version_window.show()
 
 
 class Button(QtWidgets.QPushButton):
@@ -47,7 +56,7 @@ class AutoVersionWindow(QtWidgets.QMainWindow):
         super().__init__()
 
         self.setFixedSize(800, 600)
-        self.setWindowTitle('MaKo V2.0')
+        self.setWindowTitle('MaKo V2.0 Автоматический режим')
         self.setStyleSheet(main_window_style)
 
         central_widget = QtWidgets.QWidget()
@@ -55,7 +64,12 @@ class AutoVersionWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QGridLayout(central_widget)
 
         layout.addWidget(MenuLabel('Названия точек'), 0, 0)
-        layout.addWidget(MagazinesInputBlock(), 1, 0, 6, 1)
+        self.magazines_titles = TextBlock()
+        layout.addWidget(self.magazines_titles, 1, 0, 6, 1)
+
+        self.version_button = Button('Сменить версию')
+        layout.addWidget(self.version_button, 7, 0)
+        self.version_button.clicked.connect(self.switch_version)
 
         layout.addWidget(MenuLabel('Api ключ *'),
                          0, 1,
@@ -89,16 +103,96 @@ class AutoVersionWindow(QtWidgets.QMainWindow):
         self.sms_check = SmsCheckBox()
         layout.addWidget(self.sms_check, 4, 2)
 
-        self.button_4 = Button('Просто кнопка')
-        layout.addWidget(self.button_4)
-        self.button_4.clicked.connect(self.get_input_values)
+        self.make_plugins_button = Button('Сделать плагины')
+        layout.addWidget(self.make_plugins_button, 7, 2)
+        self.make_plugins_button.clicked.connect(self.get_input_values)
+
+        layout.addWidget(MenuLabel('==ОШИБКИ=='),
+                         5, 1, 1, 2,
+                         alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.errors_field = TextBlock(text_input=True)
+        layout.addWidget(self.errors_field, 6, 1, 1, 2)
 
     def get_input_values(self):
         a = self.api_text_line.text()
 
+    def switch_version(self):
+        self.close()
+        self.custom_version_window = CustomVersionWindow()
+        self.custom_version_window.show()
 
 class SmsCheckBox(QtWidgets.QCheckBox):
     def __init__(self):
         super().__init__()
 
         self.setStyleSheet(check_box_style)
+
+
+class CustomVersionWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.setFixedSize(800, 600)
+        self.setWindowTitle('MaKo V2.0 Кастомный режим')
+        self.setStyleSheet(main_window_style)
+
+        central_widget = QtWidgets.QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QtWidgets.QGridLayout(central_widget)
+
+        layout.addWidget(MenuLabel('Названия точек'), 0, 0)
+        self.magazines_titles = TextBlock()
+        layout.addWidget(self.magazines_titles, 1, 0, 4, 1)
+
+        layout.addWidget(MenuLabel('Коды точек'),
+                         5, 0)
+        self.magazines_codes = TextBlock()
+        layout.addWidget(self.magazines_codes, 6, 0, 1, 1)
+
+        self.version_button = Button('Сменить версию')
+        layout.addWidget(self.version_button, 7, 0)
+        self.version_button.clicked.connect(self.switch_version)
+
+        layout.addWidget(MenuLabel('Api ключ *'),
+                         0, 1,
+                         alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.api_text_line = TextLine()
+        layout.addWidget(self.api_text_line, 0, 2)
+
+        layout.addWidget(MenuLabel('Название бренда *'),
+                         1, 1,
+                         alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.brand_name = TextLine()
+        layout.addWidget(self.brand_name, 1, 2)
+
+        layout.addWidget(MenuLabel('Порт для Waiter'),
+                         2, 1,
+                         alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.waiter_line = TextLine()
+        self.waiter_line.setFixedWidth(100)
+        layout.addWidget(self.waiter_line, 2, 2)
+
+        layout.addWidget(MenuLabel('Списание по СМС'),
+                         3, 1,
+                         alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.sms_check = SmsCheckBox()
+        layout.addWidget(self.sms_check, 3, 2)
+
+        self.make_plugins_button = Button('Сделать плагины')
+        layout.addWidget(self.make_plugins_button, 7, 2)
+        self.make_plugins_button.clicked.connect(self.get_input_values)
+
+        layout.addWidget(MenuLabel('==ОШИБКИ=='),
+                         5, 1, 1, 2,
+                         alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.errors_field = TextBlock(text_input=True)
+        layout.addWidget(self.errors_field, 6, 1, 1, 2)
+
+    def get_input_values(self):
+        a = self.api_text_line.text()
+
+    def switch_version(self):
+        self.close()
+        self.auto_version_window = AutoVersionWindow()
+        self.auto_version_window.show()
+

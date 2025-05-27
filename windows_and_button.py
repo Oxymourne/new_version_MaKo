@@ -1,5 +1,5 @@
+from core import *
 from PyQt6.QtCore import Qt, pyqtSignal
-
 from labels import *
 from lines_blocks import TextLine
 from styles import button_style, main_window_style, check_box_style
@@ -145,7 +145,7 @@ class AutoVersionWindow(QtWidgets.QMainWindow):
 
                         input_data = (titles_data, api_data, brand_name, port_data, codes_data, check_sms)
                         self.api_data_signal.emit(input_data)
-                        aaa(input_data)
+                        main_function(*input_data)
 
     def switch_version(self):
         self.close()

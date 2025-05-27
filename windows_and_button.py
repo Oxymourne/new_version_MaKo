@@ -1,8 +1,10 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
+
 from labels import *
 from lines_blocks import TextLine
 from styles import button_style, main_window_style, check_box_style
 from text_blocks import TextBlock
+from exceptions import *
 
 
 class VersionChoiceWindow(QtWidgets.QMainWindow):
@@ -32,7 +34,6 @@ class VersionChoiceWindow(QtWidgets.QMainWindow):
                          0, 0, 1, 2,
                          alignment=Qt.AlignmentFlag.AlignCenter)
 
-
     def show_auto_version_window(self):
         self.close()
         self.auto_version_window.show()
@@ -52,6 +53,8 @@ class Button(QtWidgets.QPushButton):
 
 
 class AutoVersionWindow(QtWidgets.QMainWindow):
+    api_data_signal = pyqtSignal(tuple)
+
     def __init__(self):
         super().__init__()
 
@@ -107,19 +110,48 @@ class AutoVersionWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.make_plugins_button, 7, 2)
         self.make_plugins_button.clicked.connect(self.get_input_values)
 
-        layout.addWidget(MenuLabel('==ОШИБКИ=='),
+        layout.addWidget(MenuLabel('ОШИБКИ'),
                          5, 1, 1, 2,
                          alignment=Qt.AlignmentFlag.AlignHCenter)
         self.errors_field = TextBlock(text_input=True)
         layout.addWidget(self.errors_field, 6, 1, 1, 2)
 
     def get_input_values(self):
-        a = self.api_text_line.text()
+
+        self.errors_field.clear()
+
+        try:
+            titles_data = correct_stores_list(self.magazines_titles.toPlainText())
+        except MyError as e:
+            self.errors_field.append(f'Названия точек: {e}')
+        else:
+            try:
+                api_data = correct_api(self.api_text_line.text())
+            except MyError as e:
+                self.errors_field.append(f'Api ключ: {e}')
+            else:
+                try:
+                    brand_name = correct_brand(self.brand_name.text())
+                except MyError as e:
+                    self.errors_field.append(f'Название бренда: {e}')
+                else:
+                    try:
+                        codes_data = correct_shop_code(self.magazines_codes.text())
+                    except MyError as e:
+                        self.errors_field.append(f'Начальный код точек: {e}')
+                    else:
+                        port_data = self.waiter_line.text()
+                        check_sms = self.sms_check.isChecked()
+
+                        input_data = (titles_data, api_data, brand_name, port_data, codes_data, check_sms)
+                        self.api_data_signal.emit(input_data)
+                        aaa(input_data)
 
     def switch_version(self):
         self.close()
         self.custom_version_window = CustomVersionWindow()
         self.custom_version_window.show()
+
 
 class SmsCheckBox(QtWidgets.QCheckBox):
     def __init__(self):
@@ -182,7 +214,7 @@ class CustomVersionWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.make_plugins_button, 7, 2)
         self.make_plugins_button.clicked.connect(self.get_input_values)
 
-        layout.addWidget(MenuLabel('==ОШИБКИ=='),
+        layout.addWidget(MenuLabel('ОШИБКИ'),
                          5, 1, 1, 2,
                          alignment=Qt.AlignmentFlag.AlignHCenter)
         self.errors_field = TextBlock(text_input=True)
@@ -196,3 +228,6 @@ class CustomVersionWindow(QtWidgets.QMainWindow):
         self.auto_version_window = AutoVersionWindow()
         self.auto_version_window.show()
 
+
+def aaa(text):
+    print(f'Вот мои значния: {text}')

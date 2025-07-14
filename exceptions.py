@@ -1,6 +1,5 @@
 import os
 
-
 class MyError(Exception):
     pass
 
@@ -11,7 +10,8 @@ def empty_value(value):
         return value
 
 def correct_stores_list(stores_list):
-    '''Проверяем, что список торговых точек не пуст и в нем нет повторяющихся значений'''
+    '''Проверяем, что список торговых точек не пуст и в нем нет повторяющихся значений
+    '''
 
     stores_list = stores_list.strip().split('\n')
 
@@ -25,6 +25,26 @@ def correct_stores_list(stores_list):
                 raise MyError('в списке есть повторяющиеся значения')
             else:
                 return stores_list
+
+def correct_codes_list(stores_list, codes_list):
+    '''Проверяем, что список кодов точек не пуст и в нем нет повторяющихся значений
+    '''
+
+    codes_list = codes_list.strip().split('\n')
+
+    if len(codes_list) == 1 and codes_list[0] == '':
+        raise MyError('список не может быть пустым')
+    else:
+        if len(codes_list) != len(stores_list):
+            raise MyError('список кодов и список названий точек должны быть равны')
+        else:
+            if any([row == '' for row in codes_list]):
+                raise MyError('в списке не может быть пустых строк')
+            else:
+                if len(codes_list) != len(set(codes_list)):
+                    raise MyError('в списке есть повторяющиеся значения')
+                else:
+                    return codes_list
 
 def correct_api(api_key):
     '''Проверяем, что поле не пустое'''

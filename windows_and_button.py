@@ -1,10 +1,11 @@
 from core import *
-from PyQt6.QtCore import Qt, pyqtSignal
 from labels import *
-from lines_blocks import TextLine
-from styles import button_style, main_window_style, check_box_style
-from text_blocks import TextBlock
 from exceptions import *
+from datetime import datetime
+from PyQt6.QtCore import Qt, pyqtSignal
+from lines_blocks import TextLine
+from styles import button_style, main_window_style, check_box_style, message_style
+from text_blocks import TextBlock
 
 
 class VersionChoiceWindow(QtWidgets.QMainWindow):
@@ -43,6 +44,27 @@ class VersionChoiceWindow(QtWidgets.QMainWindow):
         self.custom_version_window.show()
 
 
+class CompleteWindow(QtWidgets.QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Завершено")
+        self.setMinimumSize(200, 100)
+
+        layout = QtWidgets.QGridLayout()
+
+        self.label = ChoiceWindowLabel("Плагины успешно созданы!")
+        self.button = Button('OK')
+        self.button.setFixedHeight(30)
+        self.button.clicked.connect(self.close)
+        self.setStyleSheet(message_style)
+
+        layout.addWidget(self.label)
+        layout.addWidget(self.button)
+
+        self.setLayout(layout)
+
+
 class Button(QtWidgets.QPushButton):
     def __init__(self, text):
         super().__init__()
@@ -53,7 +75,7 @@ class Button(QtWidgets.QPushButton):
 
 
 class AutoVersionWindow(QtWidgets.QMainWindow):
-    api_data_signal = pyqtSignal(tuple)
+    data_signal = pyqtSignal(tuple)
 
     def __init__(self):
         super().__init__()
@@ -119,38 +141,74 @@ class AutoVersionWindow(QtWidgets.QMainWindow):
     def get_input_values(self):
 
         self.errors_field.clear()
-
         try:
-            titles_data = correct_stores_list(self.magazines_titles.toPlainText())
-        except MyError as e:
-            self.errors_field.append(f'Названия точек: {e}')
+            plugin_version = plugin_name()
+        except Exception:
+            self.errors_field.append('Папки Донор с плагином нет или она пустая')
         else:
             try:
-                api_data = correct_api(self.api_text_line.text())
+                titles_data = correct_stores_list(self.magazines_titles.toPlainText())
             except MyError as e:
-                self.errors_field.append(f'Api ключ: {e}')
+                self.errors_field.append(f'Названия точек: {e}')
             else:
                 try:
-                    brand_name = correct_brand(self.brand_name.text())
+                    api_data = correct_api(self.api_text_line.text())
                 except MyError as e:
-                    self.errors_field.append(f'Название бренда: {e}')
+                    self.errors_field.append(f'Api ключ: {e}')
                 else:
                     try:
-                        codes_data = correct_shop_code(self.magazines_codes.text())
+                        brand_name = correct_brand(self.brand_name.text())
                     except MyError as e:
-                        self.errors_field.append(f'Начальный код точек: {e}')
+                        self.errors_field.append(f'Название бренда: {e}')
                     else:
-                        port_data = self.waiter_line.text()
-                        check_sms = self.sms_check.isChecked()
+                        try:
+                            codes_data = correct_shop_code(self.magazines_codes.text())
+                        except MyError as e:
+                            self.errors_field.append(f'Начальный код точек: {e}')
+                        else:
+                            port_data = self.waiter_line.text()
+                            check_sms = self.sms_check.isChecked()
 
-                        input_data = (titles_data, api_data, brand_name, port_data, codes_data, check_sms)
-                        self.api_data_signal.emit(input_data)
-                        main_function(*input_data)
+                            input_data = (titles_data, api_data, brand_name,
+                                          port_data, codes_data, check_sms, plugin_version)
+                            self.data_signal.emit(input_data)
+
+                            try:
+                                auto_main_function(*input_data)
+                            except Exception as e:
+                                self.global_errors(e, input_data)
+                            else:
+                                self.good_log(input_data)
+                                dialog = CompleteWindow()
+                                dialog.exec()
 
     def switch_version(self):
         self.close()
         self.custom_version_window = CustomVersionWindow()
         self.custom_version_window.show()
+
+
+    def global_errors(self, error, data):
+        with open('logs.txt', 'a', encoding='utf-8') as log_outfile:
+            current_date = datetime.strftime(datetime.now(), '%d.%m.%Y %H:%M:%S')
+            log = []
+            log.append(f'{current_date}\n')
+            log.append(f'Тип ошибки: {type(error).__name__}\n')
+            log.append(f'Текст ошибки: {error}\n')
+            log.append(f'Введенные значения: {data}\n')
+            log.append(f'{'=' * 20}\n')
+            log_outfile.writelines(log)
+
+
+    def good_log(self, data):
+        with open('logs.txt', 'a', encoding='utf-8') as log_outfile:
+            current_date = datetime.strftime(datetime.now(), '%d.%m.%Y %H:%M:%S')
+            log = []
+            log.append(f'{current_date}\n')
+            log.append('Плагины успешно созданы\n')
+            log.append(f'Введенные значения: {data}\n')
+            log.append(f'{'=' * 20}\n')
+            log_outfile.writelines(log)
 
 
 class SmsCheckBox(QtWidgets.QCheckBox):
@@ -161,6 +219,8 @@ class SmsCheckBox(QtWidgets.QCheckBox):
 
 
 class CustomVersionWindow(QtWidgets.QMainWindow):
+    data_signal = pyqtSignal(tuple)
+
     def __init__(self):
         super().__init__()
 
@@ -221,13 +281,75 @@ class CustomVersionWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.errors_field, 6, 1, 1, 2)
 
     def get_input_values(self):
-        a = self.api_text_line.text()
+
+        self.errors_field.clear()
+        try:
+            plugin_version = plugin_name()
+        except Exception as ex:
+            self.errors_field.append('Папки Донор с плагином не существует')
+        except MyError as e:
+            self.errors_field.append(e)
+        else:
+            try:
+                titles_data = correct_stores_list(self.magazines_titles.toPlainText())
+            except MyError as e:
+                self.errors_field.append(f'Названия точек: {e}')
+            else:
+                try:
+                    api_data = correct_api(self.api_text_line.text())
+                except MyError as e:
+                    self.errors_field.append(f'Api ключ: {e}')
+                else:
+                    try:
+                        brand_name = correct_brand(self.brand_name.text())
+                    except MyError as e:
+                        self.errors_field.append(f'Название бренда: {e}')
+                    else:
+                        try:
+                            codes_data = correct_codes_list(titles_data, self.magazines_codes.toPlainText())
+                        except MyError as e:
+                            self.errors_field.append(f'Коды точек: {e}')
+                        else:
+                            port_data = self.waiter_line.text()
+                            check_sms = self.sms_check.isChecked()
+
+                            input_data = (titles_data, api_data, brand_name,
+                                          port_data, codes_data, check_sms, plugin_version)
+                            self.data_signal.emit(input_data)
+
+                            try:
+                                custom_main_function(*input_data)
+                            except Exception as e:
+                                self.global_errors(e, input_data)
+                            else:
+                                self.good_log(input_data)
+                                dialog = CompleteWindow()
+                                dialog.exec()
+
+
+    def global_errors(self, error, data):
+        with open('logs.txt', 'a', encoding='utf-8') as log_outfile:
+            current_date = datetime.strftime(datetime.now(), '%d.%m.%Y %H:%M:%S')
+            log = []
+            log.append(f'{current_date}\n')
+            log.append(f'Тип ошибки: {type(error).__name__}\n')
+            log.append(f'Текст ошибки: {error}\n')
+            log.append(f'Введенные значения: {data}\n')
+            log.append(f'{'=' * 20}\n')
+            log_outfile.writelines(log)
+
+
+    def good_log(self, data):
+        with open('logs.txt', 'a', encoding='utf-8') as log_outfile:
+            current_date = datetime.strftime(datetime.now(), '%d.%m.%Y %H:%M:%S')
+            log = []
+            log.append(f'{current_date}\n')
+            log.append('Плагины успешно созданы\n')
+            log.append(f'Введенные значения: {data}\n')
+            log.append(f'{'=' * 20}\n')
+            log_outfile.writelines(log)
 
     def switch_version(self):
         self.close()
         self.auto_version_window = AutoVersionWindow()
         self.auto_version_window.show()
-
-
-def aaa(text):
-    print(f'Вот мои значния: {text}')

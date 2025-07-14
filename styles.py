@@ -58,6 +58,31 @@ check_box_style = """
                 }
             """
 
+message_style ="""
+    QDialog {
+        background-color: #F4F7F9;
+        font-family: Arial;
+    }
+    QLabel {
+        color: #2E3A59;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    QPushButton {
+        color: #FFFFFF;
+        background-color: #4F46E5;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+    }
+    QPushButton:hover {
+                background-color: #6366F1;
+    }
+    QPushButton:pressed {
+                background-color: #4338CA;
+    }
+"""
+
 button_style = """
              QPushButton {
                 color: #FFFFFF;
